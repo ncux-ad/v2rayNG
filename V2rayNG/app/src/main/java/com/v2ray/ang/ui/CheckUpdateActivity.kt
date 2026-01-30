@@ -41,6 +41,13 @@ class CheckUpdateActivity : BaseActivity() {
         }
 
         checkForUpdates(binding.checkPreRelease.isChecked)
+
+        // On TV, request focus on first focusable element for D-pad navigation
+        if (Utils.isTelevision(this)) {
+            binding.layoutPreRelease.post {
+                binding.layoutPreRelease.requestFocus()
+            }
+        }
     }
 
     private fun checkForUpdates(includePreRelease: Boolean) {

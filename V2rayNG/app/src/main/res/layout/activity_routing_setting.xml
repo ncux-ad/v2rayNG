@@ -24,7 +24,9 @@
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
                 android:focusable="true"
+                android:focusableInTouchMode="true"
                 android:gravity="center|start"
+                android:nextFocusDown="@+id/recycler_view"
                 android:orientation="vertical"
                 android:padding="@dimen/padding_spacing_dp16">
 
@@ -60,7 +62,10 @@
                 android:id="@+id/recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
                 android:nestedScrollingEnabled="false"
+                android:nextFocusUp="@+id/layout_domain_strategy"
                 tools:listitem="@layout/item_recycler_routing_setting" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

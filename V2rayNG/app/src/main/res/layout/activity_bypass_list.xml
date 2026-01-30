@@ -38,7 +38,10 @@
                         android:id="@+id/switch_per_app_proxy"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
                         android:maxLines="2"
+                        android:nextFocusRight="@+id/switch_bypass_apps"
                         android:text="@string/per_app_proxy_settings_enable"
                         android:textAppearance="@style/TextAppearance.AppCompat.Small"
                         app:theme="@style/BrandedSwitch" />
@@ -58,6 +61,10 @@
                         android:id="@+id/switch_bypass_apps"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:nextFocusLeft="@+id/switch_per_app_proxy"
+                        android:nextFocusRight="@+id/layout_switch_bypass_apps_tips"
                         android:text="@string/switch_bypass_apps_mode"
                         android:textAppearance="@style/TextAppearance.AppCompat.Small"
                         app:theme="@style/BrandedSwitch" />
@@ -69,7 +76,10 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:clickable="true"
                         android:focusable="true"
+                        android:focusableInTouchMode="true"
                         android:gravity="center"
+                        android:nextFocusLeft="@+id/switch_bypass_apps"
+                        android:nextFocusDown="@+id/recycler_view"
                         android:padding="@dimen/padding_spacing_dp8">
 
                         <ImageView
@@ -90,6 +100,9 @@
         android:id="@+id/recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:nextFocusUp="@+id/layout_switch_bypass_apps_tips"
         android:scrollbars="vertical"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager" />
 

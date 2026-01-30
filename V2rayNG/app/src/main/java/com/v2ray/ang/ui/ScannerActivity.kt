@@ -1,18 +1,22 @@
 package com.v2ray.ang.ui
 
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import androidx.lifecycle.lifecycleScope
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.databinding.ActivityNoneBinding
 import com.v2ray.ang.extension.toast
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.util.QRCodeDecoder
+import com.v2ray.ang.util.Utils
 import io.github.g00fy2.quickie.QRResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import io.github.g00fy2.quickie.ScanCustomCode
 import io.github.g00fy2.quickie.config.BarcodeFormat
 import io.github.g00fy2.quickie.config.ScannerConfig
@@ -27,7 +31,10 @@ class ScannerActivity : HelperBaseActivity() {
 
         setContentViewWithToolbar(binding.root, showHomeAsUp = true, title = getString(R.string.menu_item_import_config_qrcode))
 
-        if (MmkvManager.decodeSettingsBool(AppConfig.PREF_START_SCAN_IMMEDIATE)) {
+        if (Utils.isTelevision(this)) {
+            // On TV, use only gallery (no camera)
+            showFileChooser()
+        } else if (MmkvManager.decodeSettingsBool(AppConfig.PREF_START_SCAN_IMMEDIATE)) {
             launchScan()
         }
     }
@@ -83,20 +90,22 @@ class ScannerActivity : HelperBaseActivity() {
             if (uri == null) {
                 return@launchFileChooser
             }
-            try {
-                val inputStream = contentResolver.openInputStream(uri)
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                inputStream?.close()
-
-                val text = QRCodeDecoder.syncDecodeQRCode(bitmap)
-                if (text.isNullOrEmpty()) {
-                    toast(R.string.toast_decoding_failed)
-                } else {
-                    finished(text)
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val text = QRCodeDecoder.syncDecodeQRCode(this@ScannerActivity, uri)
+                    withContext(Dispatchers.Main) {
+                        if (text.isNullOrEmpty()) {
+                            toast(R.string.toast_decoding_failed)
+                        } else {
+                            finished(text)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(AppConfig.TAG, "Failed to decode QR code from file", e)
+                    withContext(Dispatchers.Main) {
+                        toast(R.string.toast_decoding_failed)
+                    }
                 }
-            } catch (e: Exception) {
-                Log.e(AppConfig.TAG, "Failed to decode QR code from file", e)
-                toast(R.string.toast_decoding_failed)
             }
         }
     }

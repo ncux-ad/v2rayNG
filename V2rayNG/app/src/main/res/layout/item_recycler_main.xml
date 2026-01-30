@@ -15,6 +15,7 @@
         android:background="?attr/selectableItemBackground"
         android:clickable="true"
         android:focusable="true"
+        android:focusableInTouchMode="true"
         android:gravity="center"
         android:nextFocusRight="@+id/layout_share"
         android:orientation="horizontal"
@@ -113,8 +114,10 @@
                         android:clickable="true"
                         android:contentDescription="@string/title_configuration_share"
                         android:focusable="true"
+                        android:focusableInTouchMode="true"
                         android:gravity="center"
                         android:nextFocusLeft="@+id/info_container"
+                        android:nextFocusRight="@+id/layout_edit"
                         android:orientation="vertical"
                         android:padding="@dimen/padding_spacing_dp8">
 
@@ -133,7 +136,10 @@
                         android:clickable="true"
                         android:contentDescription="@string/menu_item_edit_config"
                         android:focusable="true"
+                        android:focusableInTouchMode="true"
                         android:gravity="center"
+                        android:nextFocusLeft="@+id/layout_share"
+                        android:nextFocusRight="@+id/layout_remove"
                         android:orientation="vertical"
                         android:padding="@dimen/padding_spacing_dp8">
 
@@ -152,7 +158,10 @@
                         android:clickable="true"
                         android:contentDescription="@string/menu_item_del_config"
                         android:focusable="true"
+                        android:focusableInTouchMode="true"
                         android:gravity="center"
+                        android:nextFocusLeft="@+id/layout_edit"
+                        android:nextFocusRight="@+id/layout_more"
                         android:orientation="vertical"
                         android:padding="@dimen/padding_spacing_dp8">
 
@@ -171,7 +180,9 @@
                         android:clickable="true"
                         android:contentDescription="@string/notification_action_more"
                         android:focusable="true"
+                        android:focusableInTouchMode="true"
                         android:gravity="center"
+                        android:nextFocusLeft="@+id/layout_remove"
                         android:orientation="vertical"
                         android:padding="@dimen/padding_spacing_dp8">
 

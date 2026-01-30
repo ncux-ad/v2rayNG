@@ -48,6 +48,13 @@ class UserAssetActivity : HelperBaseActivity() {
         adapter = UserAssetAdapter(viewModel, extDir, ActivityAdapterListener())
         binding.recyclerView.adapter = adapter
 
+        // On TV, request focus on first focusable element for D-pad navigation
+        if (Utils.isTelevision(this)) {
+            binding.layoutGeoFilesSources.post {
+                binding.layoutGeoFilesSources.requestFocus()
+            }
+        }
+
         binding.tvGeoFilesSourcesSummary.text = getGeoFilesSources()
         binding.layoutGeoFilesSources.setOnClickListener {
             setGeoFilesSources()

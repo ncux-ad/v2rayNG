@@ -19,6 +19,7 @@ import com.v2ray.ang.extension.toastSuccess
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsChangeManager
 import com.v2ray.ang.handler.WebDavManager
+import com.v2ray.ang.util.Utils
 import com.v2ray.ang.util.ZipUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,6 +40,13 @@ class BackupActivity : HelperBaseActivity() {
         super.onCreate(savedInstanceState)
        //setContentView(binding.root)
         setContentViewWithToolbar(binding.root, showHomeAsUp = true, title = getString(R.string.title_configuration_backup_restore))
+
+        // On TV, request focus on first focusable element for D-pad navigation
+        if (Utils.isTelevision(this)) {
+            binding.layoutBackup.post {
+                binding.layoutBackup.requestFocus()
+            }
+        }
 
         binding.layoutBackup.setOnClickListener {
             AlertDialog.Builder(this)

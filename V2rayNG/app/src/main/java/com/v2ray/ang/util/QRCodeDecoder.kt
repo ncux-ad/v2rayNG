@@ -1,14 +1,19 @@
 package com.v2ray.ang.util
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import com.google.zxing.BarcodeFormat
+import java.io.File
+import java.io.FileOutputStream
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
 import com.google.zxing.EncodeHintType
 import com.google.zxing.NotFoundException
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.GlobalHistogramBinarizer
+import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.qrcode.QRCodeReader
 import com.google.zxing.qrcode.QRCodeWriter
 import java.util.EnumMap
@@ -40,13 +45,48 @@ object QRCodeDecoder {
     }
 
     /**
-     * Decodes a QR code from a local image file. This method is time-consuming and should be called in a background thread.
+     * Decodes a QR code from a content URI (e.g. from file picker / Cx File Explorer on TV).
+     * Copies the URI to a temp file and uses scaled decoding for reliability on TV and large images.
+     * This method is time-consuming and should be called in a background thread.
+     *
+     * @param context Context for cache dir and content resolver.
+     * @param uri Content URI of the image (from ACTION_GET_CONTENT).
+     * @return The content of the QR code, or null if decoding fails.
+     */
+    fun syncDecodeQRCode(context: Context, uri: Uri): String? {
+        // file:// from file managers (e.g. Cx File Explorer on TV) — decode by path
+        if (uri.scheme == "file") {
+            uri.path?.let { path -> return syncDecodeQRCode(path) }
+            return null
+        }
+        val tempFile = File.createTempFile("qr_", ".img", context.cacheDir)
+        return try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    input.copyTo(output)
+                }
+            } ?: return null
+            syncDecodeQRCode(tempFile.absolutePath)
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /**
+     * Decodes a QR code from a local image file. Tries multiple scales and binarizers for difficult images (e.g. JPEG artifacts).
+     * This method is time-consuming and should be called in a background thread.
      *
      * @param picturePath The local path of the image file to decode.
      * @return The content of the QR code, or null if decoding fails.
      */
     fun syncDecodeQRCode(picturePath: String): String? {
-        return syncDecodeQRCode(getDecodeAbleBitmap(picturePath))
+        // Try default scale (height/400), then smaller scales to reduce JPEG noise
+        for (forceSample in listOf(null, 2, 4)) {
+            val bitmap = getDecodeAbleBitmap(picturePath, forceSample) ?: continue
+            val text = syncDecodeQRCodeFromBitmap(bitmap)
+            if (!text.isNullOrEmpty()) return text
+        }
+        return null
     }
 
     /**
@@ -56,37 +96,49 @@ object QRCodeDecoder {
      * @return The content of the QR code, or null if decoding fails.
      */
     fun syncDecodeQRCode(bitmap: Bitmap?): String? {
-        return bitmap?.let {
-            runCatching {
-                val pixels = IntArray(it.width * it.height).also { array ->
-                    it.getPixels(array, 0, it.width, 0, 0, it.width, it.height)
-                }
-                val source = RGBLuminanceSource(it.width, it.height, pixels)
-                val qrReader = QRCodeReader()
-
-                try {
-                    qrReader.decode(BinaryBitmap(GlobalHistogramBinarizer(source)), HINTS).text
-                } catch (e: NotFoundException) {
-                    qrReader.decode(BinaryBitmap(GlobalHistogramBinarizer(source.invert())), HINTS).text
-                }
-            }.getOrNull()
-        }
+        return bitmap?.let { syncDecodeQRCodeFromBitmap(it) }
     }
 
     /**
-     * Converts a local image file to a bitmap that can be decoded as a QR code. The image is compressed to avoid being too large.
+     * Tries GlobalHistogramBinarizer then HybridBinarizer (and inverted) for difficult images.
+     */
+    private fun syncDecodeQRCodeFromBitmap(bitmap: Bitmap): String? {
+        val pixels = IntArray(bitmap.width * bitmap.height).also { array ->
+            bitmap.getPixels(array, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        }
+        val source = RGBLuminanceSource(bitmap.width, bitmap.height, pixels)
+        val qrReader = QRCodeReader()
+
+        for (inverted in listOf(false, true)) {
+            val src = if (inverted) source.invert() else source
+            val text = runCatching {
+                try {
+                    qrReader.decode(BinaryBitmap(GlobalHistogramBinarizer(src)), HINTS).text
+                } catch (e: NotFoundException) {
+                    qrReader.decode(BinaryBitmap(HybridBinarizer(src)), HINTS).text
+                }
+            }.getOrNull()
+            if (!text.isNullOrEmpty()) return text
+        }
+        return null
+    }
+
+    /**
+     * Converts a local image file to a bitmap for QR decoding.
      *
      * @param picturePath The local path of the image file.
+     * @param forceSampleSize If set, use this inSampleSize; otherwise use height/400.
      * @return The decoded bitmap, or null if an error occurs.
      */
-    private fun getDecodeAbleBitmap(picturePath: String): Bitmap? {
+    private fun getDecodeAbleBitmap(picturePath: String, forceSampleSize: Int? = null): Bitmap? {
         return try {
             val options = BitmapFactory.Options()
             options.inJustDecodeBounds = true
             BitmapFactory.decodeFile(picturePath, options)
-            var sampleSize = options.outHeight / 400
-            if (sampleSize <= 0) {
-                sampleSize = 1
+            val sampleSize = forceSampleSize ?: run {
+                var s = options.outHeight / 400
+                if (s <= 0) s = 1
+                s
             }
             options.inSampleSize = sampleSize
             options.inJustDecodeBounds = false

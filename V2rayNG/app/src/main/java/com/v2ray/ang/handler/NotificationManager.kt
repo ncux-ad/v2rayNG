@@ -2,7 +2,7 @@ package com.v2ray.ang.handler
 
 import android.app.Notification
 import android.app.NotificationChannel
-import android.app.NotificationManager
+import android.app.NotificationManager as SystemNotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
@@ -16,6 +16,7 @@ import com.v2ray.ang.R
 import com.v2ray.ang.dto.ProfileItem
 import com.v2ray.ang.extension.toSpeedString
 import com.v2ray.ang.ui.MainActivity
+import com.v2ray.ang.util.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,7 +35,7 @@ object NotificationManager {
     private var lastQueryTime = 0L
     private var mBuilder: NotificationCompat.Builder? = null
     private var speedNotificationJob: Job? = null
-    private var mNotificationManager: NotificationManager? = null
+    private var mNotificationManager: SystemNotificationManager? = null
 
     /**
      * Starts the speed notification.
@@ -138,6 +139,68 @@ object NotificationManager {
     }
 
     /**
+     * Builds a minimal notification for startForeground() so the service is not killed before setup completes.
+     * Call this at the start of onStartCommand, then replace with showNotification() on success or showVpnFailureNotification() on failure.
+     */
+    fun getStartingNotification(context: Context): Notification {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                AppConfig.RAY_NG_CHANNEL_ID,
+                AppConfig.RAY_NG_CHANNEL_NAME,
+                SystemNotificationManager.IMPORTANCE_LOW
+            )
+            (context.getSystemService(Context.NOTIFICATION_SERVICE) as SystemNotificationManager)
+                .createNotificationChannel(channel)
+        }
+        val channelId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) AppConfig.RAY_NG_CHANNEL_ID else ""
+        val intent = Intent(context, MainActivity::class.java)
+        val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        val pendingIntent = PendingIntent.getActivity(context, 0, intent, flags)
+        return NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_stat_name)
+            .setContentTitle(context.getString(R.string.notification_starting))
+            .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+    }
+
+    /**
+     * Shows a one-time notification when VPN fails to start (e.g. on TV where VPN is blocked).
+     * Ensures the user sees feedback even if the broadcast/toast is not shown.
+     */
+    fun showVpnFailureNotification(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                AppConfig.VPN_FAILURE_CHANNEL_ID,
+                context.getString(R.string.notification_vpn_failure_channel),
+                SystemNotificationManager.IMPORTANCE_HIGH
+            )
+            (context.getSystemService(Context.NOTIFICATION_SERVICE) as SystemNotificationManager)
+                .createNotificationChannel(channel)
+        }
+        val channelId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) AppConfig.VPN_FAILURE_CHANNEL_ID else ""
+        val intent = Intent(context, MainActivity::class.java)
+        val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        val pendingIntent = PendingIntent.getActivity(context, 0, intent, flags)
+        val contentText = if (Utils.isTelevision(context)) {
+            context.getString(R.string.notification_vpn_failure_tv_hint)
+        } else {
+            context.getString(R.string.toast_services_failure)
+        }
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_stat_name)
+            .setContentTitle(context.getString(R.string.notification_vpn_failure_title))
+            .setContentText(contentText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(contentText))
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+        (context.getSystemService(Context.NOTIFICATION_SERVICE) as SystemNotificationManager)
+            .notify(AppConfig.VPN_FAILURE_NOTIFICATION_ID, notification)
+    }
+
+    /**
      * Cancels the notification.
      */
     fun cancelNotification() {
@@ -172,10 +235,10 @@ object NotificationManager {
         val channelName = AppConfig.RAY_NG_CHANNEL_NAME
         val chan = NotificationChannel(
             channelId,
-            channelName, NotificationManager.IMPORTANCE_HIGH
+            channelName, SystemNotificationManager.IMPORTANCE_HIGH
         )
         chan.lightColor = Color.DKGRAY
-        chan.importance = NotificationManager.IMPORTANCE_NONE
+        chan.importance = SystemNotificationManager.IMPORTANCE_NONE
         chan.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
         getNotificationManager()?.createNotificationChannel(chan)
         return channelId
@@ -206,10 +269,10 @@ object NotificationManager {
      * Gets the notification manager.
      * @return The notification manager.
      */
-    private fun getNotificationManager(): NotificationManager? {
+    private fun getNotificationManager(): SystemNotificationManager? {
         if (mNotificationManager == null) {
             val service = getService() ?: return null
-            mNotificationManager = service.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            mNotificationManager = service.getSystemService(Context.NOTIFICATION_SERVICE) as SystemNotificationManager
         }
         return mNotificationManager
     }

@@ -38,6 +38,13 @@ class LogcatActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
         binding.refreshLayout.setOnRefreshListener(this)
 
         toast(getString(R.string.pull_down_to_refresh))
+
+        // On TV, request focus on RecyclerView for D-pad navigation
+        if (Utils.isTelevision(this)) {
+            binding.recyclerView.post {
+                binding.recyclerView.requestFocus()
+            }
+        }
     }
 
     private fun onLogLongClick(log: String): Boolean {

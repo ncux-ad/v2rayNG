@@ -14,6 +14,7 @@
         android:background="?attr/selectableItemBackground"
         android:clickable="true"
         android:focusable="true"
+        android:focusableInTouchMode="true"
         android:gravity="center"
         android:nextFocusRight="@+id/layout_share"
         android:orientation="horizontal"
@@ -59,8 +60,10 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:clickable="true"
                         android:focusable="true"
+                        android:focusableInTouchMode="true"
                         android:gravity="center"
                         android:nextFocusLeft="@+id/info_container"
+                        android:nextFocusRight="@+id/layout_edit"
                         android:orientation="vertical"
                         android:padding="@dimen/padding_spacing_dp8">
 
@@ -78,7 +81,10 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:clickable="true"
                         android:focusable="true"
+                        android:focusableInTouchMode="true"
                         android:gravity="center"
+                        android:nextFocusLeft="@+id/layout_share"
+                        android:nextFocusRight="@+id/layout_remove"
                         android:orientation="vertical"
                         android:padding="@dimen/padding_spacing_dp8">
 
@@ -96,7 +102,9 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:clickable="true"
                         android:focusable="true"
+                        android:focusableInTouchMode="true"
                         android:gravity="center"
+                        android:nextFocusLeft="@+id/layout_edit"
                         android:orientation="vertical"
                         android:padding="@dimen/padding_spacing_dp8">
 
@@ -146,6 +154,8 @@
                         android:id="@+id/chk_enable"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
                         app:theme="@style/BrandedSwitch" />
                 </LinearLayout>
 

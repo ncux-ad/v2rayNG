@@ -19,6 +19,10 @@
     <string name="toast_services_stop">Остановка служб</string>
     <string name="toast_services_success">Службы успешно запущены</string>
     <string name="toast_services_failure">Сбой при запуске служб</string>
+    <string name="notification_vpn_failure_title">v2rayNG — не удалось запустить VPN</string>
+    <string name="notification_vpn_failure_channel">Ошибка запуска VPN</string>
+    <string name="notification_vpn_failure_tv_hint">VPN на этом устройстве заблокирован. Нативное приложение YouTube и др. работают только через VPN. Если есть ADB (отладка по USB): выполните adb shell appops set com.v2ray.ang ACTIVATE_VPN allow, затем снова запустите VPN. Иначе используйте режим «Только прокси» (браузер).</string>
+    <string name="notification_starting">Запуск VPN…</string>
 
     <!--ServerActivity-->
     <string name="title_server">Профиль</string>

@@ -22,7 +22,9 @@
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
                 android:focusable="true"
+                android:focusableInTouchMode="true"
                 android:gravity="center|start"
+                android:nextFocusDown="@+id/layout_oss_licenses"
                 android:orientation="horizontal"
                 android:padding="@dimen/padding_spacing_dp16">
 
@@ -46,7 +48,10 @@
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
                 android:focusable="true"
+                android:focusableInTouchMode="true"
                 android:gravity="center|start"
+                android:nextFocusUp="@+id/layout_soure_ccode"
+                android:nextFocusDown="@+id/layout_feedback"
                 android:orientation="horizontal"
                 android:padding="@dimen/padding_spacing_dp16">
 
@@ -70,7 +75,10 @@
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
                 android:focusable="true"
+                android:focusableInTouchMode="true"
                 android:gravity="center|start"
+                android:nextFocusUp="@+id/layout_oss_licenses"
+                android:nextFocusDown="@+id/layout_tg_channel"
                 android:orientation="horizontal"
                 android:padding="@dimen/padding_spacing_dp16">
 
@@ -95,7 +103,10 @@
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
                 android:focusable="true"
+                android:focusableInTouchMode="true"
                 android:gravity="center|start"
+                android:nextFocusUp="@+id/layout_feedback"
+                android:nextFocusDown="@+id/layout_privacy_policy"
                 android:orientation="horizontal"
                 android:padding="@dimen/padding_spacing_dp16">
 
@@ -119,7 +130,9 @@
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
                 android:focusable="true"
+                android:focusableInTouchMode="true"
                 android:gravity="center|start"
+                android:nextFocusUp="@+id/layout_tg_channel"
                 android:orientation="horizontal"
                 android:padding="@dimen/padding_spacing_dp16">
 

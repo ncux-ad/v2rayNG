@@ -4,6 +4,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.content.res.Configuration.UI_MODE_NIGHT_MASK
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.os.Build
@@ -566,6 +568,23 @@ object Utils {
         } catch (e: Exception) {
             Log.e(AppConfig.TAG, "Failed to format timestamp", e)
             ""
+        }
+    }
+
+    /**
+     * Check if the device is running on Android TV.
+     *
+     * @param context The context to use.
+     * @return True if the device is an Android TV, false otherwise.
+     */
+    fun isTelevision(context: Context): Boolean {
+        return try {
+            val uiModeManager = context.getSystemService(Context.UI_MODE_SERVICE) as android.app.UiModeManager
+            uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION ||
+                    context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+        } catch (e: Exception) {
+            Log.e(AppConfig.TAG, "Failed to check if device is TV", e)
+            false
         }
     }
 }

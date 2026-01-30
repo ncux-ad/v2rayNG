@@ -49,9 +49,12 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     private lateinit var groupPagerAdapter: GroupPagerAdapter
     private var tabMediator: TabLayoutMediator? = null
 
-    private val requestVpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == RESULT_OK) {
+    private val requestVpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
             startV2Ray()
+        } else {
+            applyRunningState(isLoading = false, isRunning = false)
+            toastError(R.string.toast_services_failure)
         }
     }
     private val requestActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -101,6 +104,13 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         mainViewModel.reloadServerList()
 
         checkAndRequestPermission(PermissionType.POST_NOTIFICATIONS) {
+        }
+
+        // On TV, request focus on the first focusable element for D-pad navigation
+        if (Utils.isTelevision(this)) {
+            binding.viewPager.post {
+                binding.viewPager.requestFocus()
+            }
         }
     }
 
@@ -364,12 +374,45 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
      * import config from qrcode
      */
     private fun importQRcode(): Boolean {
-        launchQRCodeScanner { scanResult ->
-            if (scanResult != null) {
-                importBatchConfig(scanResult)
+        if (Utils.isTelevision(this)) {
+            // On TV, use only gallery (no camera)
+            importQRcodeFromGallery()
+        } else {
+            launchQRCodeScanner { scanResult ->
+                if (scanResult != null) {
+                    importBatchConfig(scanResult)
+                }
             }
         }
         return true
+    }
+
+    /**
+     * Import QR code from gallery (for TV devices)
+     */
+    private fun importQRcodeFromGallery() {
+        launchFileChooser("image/*") { uri ->
+            if (uri == null) {
+                return@launchFileChooser
+            }
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val text = com.v2ray.ang.util.QRCodeDecoder.syncDecodeQRCode(this@MainActivity, uri)
+                    withContext(Dispatchers.Main) {
+                        if (text.isNullOrEmpty()) {
+                            toastError(R.string.toast_decoding_failed)
+                        } else {
+                            importBatchConfig(text)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(AppConfig.TAG, "Failed to decode QR code from file", e)
+                    withContext(Dispatchers.Main) {
+                        toastError(R.string.toast_decoding_failed)
+                    }
+                }
+            }
+        }
     }
 
     /**

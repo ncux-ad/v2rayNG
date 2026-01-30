@@ -47,6 +47,13 @@ class PerAppProxyActivity : BaseActivity() {
 
         initList()
 
+        // On TV, request focus on first switch for D-pad navigation
+        if (Utils.isTelevision(this)) {
+            binding.switchPerAppProxy.post {
+                binding.switchPerAppProxy.requestFocus()
+            }
+        }
+
         binding.switchPerAppProxy.setOnCheckedChangeListener { _, isChecked ->
             MmkvManager.encodeSettings(AppConfig.PREF_PER_APP_PROXY, isChecked)
         }

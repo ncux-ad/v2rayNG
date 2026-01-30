@@ -48,5 +48,12 @@ class AboutActivity : BaseActivity() {
         BuildConfig.APPLICATION_ID.also {
             binding.tvAppId.text = it
         }
+
+        // On TV, request focus on first focusable element for D-pad navigation
+        if (Utils.isTelevision(this)) {
+            binding.layoutSoureCcode.post {
+                binding.layoutSoureCcode.requestFocus()
+            }
+        }
     }
 }

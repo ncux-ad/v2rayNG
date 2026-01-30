@@ -55,6 +55,13 @@ class SubSettingActivity : BaseActivity() {
 
         mItemTouchHelper = ItemTouchHelper(SimpleItemTouchHelperCallback(adapter))
         mItemTouchHelper?.attachToRecyclerView(binding.recyclerView)
+
+        // On TV, request focus on RecyclerView for D-pad navigation
+        if (Utils.isTelevision(this)) {
+            binding.recyclerView.post {
+                binding.recyclerView.requestFocus()
+            }
+        }
     }
 
     override fun onResume() {

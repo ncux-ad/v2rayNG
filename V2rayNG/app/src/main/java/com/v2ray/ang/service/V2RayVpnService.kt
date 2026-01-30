@@ -11,6 +11,8 @@ import android.net.NetworkRequest
 import android.net.ProxyInfo
 import android.net.VpnService
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.os.StrictMode
 import android.util.Log
@@ -24,6 +26,7 @@ import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.NotificationManager
 import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.handler.V2RayServiceManager
+import com.v2ray.ang.util.MessageUtil
 import com.v2ray.ang.util.MyContextWrapper
 import com.v2ray.ang.util.Utils
 import java.lang.ref.SoftReference
@@ -92,8 +95,12 @@ class V2RayVpnService : VpnService(), ServiceControl {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        setupVpnService()
-        startService()
+        startForeground(1, NotificationManager.getStartingNotification(this))
+        if (setupVpnService()) {
+            startService()
+        } else {
+            stopForeground(Service.STOP_FOREGROUND_REMOVE)
+        }
         return START_STICKY
         //return super.onStartCommand(intent, flags, startId)
     }
@@ -133,21 +140,35 @@ class V2RayVpnService : VpnService(), ServiceControl {
      * Sets up the VPN service.
      * Prepares the VPN and configures it if preparation is successful.
      */
-    private fun setupVpnService() {
+    /**
+     * Sets up the VPN service.
+     * @return true if setup succeeded and [startService] should be called, false otherwise.
+     */
+    private fun setupVpnService(): Boolean {
         val prepare = prepare(this)
         if (prepare != null) {
             Log.e(AppConfig.TAG, "VPN preparation failed")
-            stopSelf()
-            return
+            notifyStartFailureAndStop()
+            return false
         }
 
         if (configureVpnService() != true) {
             Log.e(AppConfig.TAG, "VPN configuration failed")
-            stopSelf()
-            return
+            notifyStartFailureAndStop()
+            return false
         }
 
         runTun2socks()
+        return true
+    }
+
+    /** Notify UI of start failure and stop. Show notification so user always sees feedback (e.g. on TV where toast may not show). */
+    private fun notifyStartFailureAndStop() {
+        NotificationManager.showVpnFailureNotification(this)
+        Handler(Looper.getMainLooper()).postDelayed({
+            MessageUtil.sendMsg2UI(this@V2RayVpnService, AppConfig.MSG_STATE_START_FAILURE, "")
+        }, 300)
+        stopSelf()
     }
 
     /**

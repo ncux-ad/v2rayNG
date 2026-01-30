@@ -60,6 +60,13 @@ class RoutingSettingActivity : HelperBaseActivity() {
         binding.layoutDomainStrategy.setOnClickListener {
             setDomainStrategy()
         }
+
+        // On TV, request focus on first focusable element for D-pad navigation
+        if (Utils.isTelevision(this)) {
+            binding.layoutDomainStrategy.post {
+                binding.layoutDomainStrategy.requestFocus()
+            }
+        }
     }
 
     override fun onResume() {
