@@ -72,11 +72,20 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
             if (mainViewModel.subscriptionId != subId) {
                 return@observe
             }
-            // Log.d(TAG, "GroupServerFragment updateListAction subId=$subId")
             adapter.setData(mainViewModel.serversCache, index)
+            updateEmptyState()
         }
 
-        // Log.d(TAG, "GroupServerFragment onViewCreated: subId=$subId")
+        binding.root.findViewById<View>(R.id.empty_servers)?.findViewById<View>(R.id.empty_action)?.setOnClickListener {
+            ownerActivity.openOptionsMenu()
+        }
+        updateEmptyState()
+    }
+
+    private fun updateEmptyState() {
+        val empty = binding.root.findViewById<View>(R.id.empty_servers)
+        val isEmpty = mainViewModel.subscriptionId == subId && mainViewModel.serversCache.isEmpty()
+        empty?.visibility = if (isEmpty) View.VISIBLE else View.GONE
     }
 
     override fun onResume() {

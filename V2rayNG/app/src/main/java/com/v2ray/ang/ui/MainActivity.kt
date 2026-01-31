@@ -9,6 +9,9 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
+import android.view.HapticFeedbackConstants
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -19,6 +22,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayoutMediator
 import com.v2ray.ang.AppConfig
@@ -54,7 +58,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             startV2Ray()
         } else {
             applyRunningState(isLoading = false, isRunning = false)
-            toastError(R.string.toast_services_failure)
+            showSnackbar(getString(R.string.toast_services_failure))
         }
     }
     private val requestActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -106,10 +110,25 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         checkAndRequestPermission(PermissionType.POST_NOTIFICATIONS) {
         }
 
-        // On TV, request focus on the first focusable element for D-pad navigation
+        // On TV: request focus on the first focusable element; make disabled drawer items not focusable
         if (Utils.isTelevision(this)) {
             binding.viewPager.post {
                 binding.viewPager.requestFocus()
+            }
+            binding.navView.post {
+                setDisabledMenuItemsNotFocusable(binding.navView)
+            }
+        }
+    }
+
+    /** On TV: so D-pad skips disabled drawer menu items (e.g. placeholder). */
+    private fun setDisabledMenuItemsNotFocusable(view: View) {
+        if (!view.isEnabled) {
+            view.isFocusable = false
+        }
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                setDisabledMenuItemsNotFocusable(view.getChildAt(i))
             }
         }
     }
@@ -118,6 +137,17 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         mainViewModel.updateTestResultAction.observe(this) { setTestState(it) }
         mainViewModel.isRunning.observe(this) { isRunning ->
             applyRunningState(false, isRunning)
+        }
+        mainViewModel.hasAnyServers.observe(this) { _ ->
+            if (mainViewModel.isRunning.value != true) {
+                updateStatusMessage()
+            }
+        }
+        mainViewModel.snackbarMessageResId.observe(this) { resId ->
+            resId?.let {
+                showSnackbar(getString(it))
+                mainViewModel.snackbarMessageResId.value = null
+            }
         }
         mainViewModel.startListenBroadcast()
         mainViewModel.initAssets(assets)
@@ -139,9 +169,48 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         binding.viewPager.setCurrentItem(targetIndex, false)
 
         binding.tabGroup.isVisible = groups.size > 1
+        if (groups.size > 1) {
+            binding.tabGroup.post {
+                setupTabScrollHint()
+            }
+        } else {
+            binding.tabFadeStart.visibility = View.GONE
+            binding.tabFadeEnd.visibility = View.GONE
+        }
+    }
+
+    /** Updates left/right fade visibility when tab strip is scrollable. */
+    private fun setupTabScrollHint() {
+        fun update() {
+            updateTabFadeVisibility()
+        }
+        update()
+        binding.tabGroup.setOnScrollChangeListener { _: View?, _: Int, _: Int, _: Int, _: Int ->
+            update()
+        }
+        binding.tabGroup.viewTreeObserver.addOnGlobalLayoutListener(object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                binding.tabGroup.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                update()
+            }
+        })
+    }
+
+    private fun updateTabFadeVisibility() {
+        val tab = binding.tabGroup
+        val contentWidth = (tab.getChildAt(0)?.width ?: 0).coerceAtLeast(0)
+        val showStart = tab.scrollX > 0
+        val showEnd = contentWidth > 0 && tab.scrollX + tab.width < contentWidth
+        binding.tabFadeStart.visibility = if (showStart) View.VISIBLE else View.GONE
+        binding.tabFadeEnd.visibility = if (showEnd) View.VISIBLE else View.GONE
     }
 
     private fun handleFabAction() {
+        if (mainViewModel.serversCache.isEmpty()) {
+            binding.drawerLayout.open()
+            return
+        }
+        binding.fab.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
         applyRunningState(isLoading = true, isRunning = false)
 
         if (mainViewModel.isRunning.value == true) {
@@ -169,7 +238,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
 
     private fun startV2Ray() {
         if (MmkvManager.getSelectServer().isNullOrEmpty()) {
-            toast(R.string.title_file_chooser)
+            showSnackbar(getString(R.string.connection_select_or_add_server))
             return
         }
         V2RayServiceManager.startVService(this)
@@ -189,7 +258,22 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         binding.tvTestState.text = content
     }
 
-    private  fun applyRunningState(isLoading: Boolean, isRunning: Boolean) {
+    fun showSnackbar(message: CharSequence, actionLabel: CharSequence? = null, onAction: (() -> Unit)? = null) {
+        Snackbar.make(binding.mainContent, message, Snackbar.LENGTH_SHORT).apply {
+            if (actionLabel != null && onAction != null) {
+                setAction(actionLabel) { onAction() }
+            }
+            show()
+        }
+    }
+
+    private fun updateStatusMessage() {
+        if (mainViewModel.isRunning.value == true) return
+        val noServer = MmkvManager.getSelectServer().isNullOrEmpty() || mainViewModel.serversCache.isEmpty()
+        setTestState(getString(if (noServer) R.string.connection_select_or_add_server else R.string.connection_not_connected))
+    }
+
+    private fun applyRunningState(isLoading: Boolean, isRunning: Boolean) {
         if (isLoading) {
             binding.fab.setImageResource(R.drawable.ic_fab_check)
             return
@@ -205,13 +289,19 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             binding.fab.setImageResource(R.drawable.ic_play_24dp)
             binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_inactive))
             binding.fab.contentDescription = getString(R.string.tasker_start_service)
-            setTestState(getString(R.string.connection_not_connected))
-            binding.layoutTest.isFocusable = false
+            updateStatusMessage()
+            binding.layoutTest.isFocusable = mainViewModel.serversCache.isNotEmpty()
         }
+        binding.fab.animate().scaleX(1.1f).scaleY(1.1f).setDuration(80).withEndAction {
+            binding.fab.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+        }.start()
     }
 
     override fun onResume() {
         super.onResume()
+        if (mainViewModel.isRunning.value != true) {
+            updateStatusMessage()
+        }
     }
 
     override fun onPause() {
@@ -483,13 +573,15 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             val count = mainViewModel.updateConfigViaSubAll()
             delay(500L)
             launch(Dispatchers.Main) {
+                hideLoading()
                 if (count > 0) {
-                    toast(getString(R.string.title_update_config_count, count))
+                    showSnackbar(getString(R.string.title_update_config_count, count))
                     mainViewModel.reloadServerList()
                 } else {
-                    toastError(R.string.toast_failure)
+                    showSnackbar(getString(R.string.import_subscription_failure), getString(R.string.snackbar_retry)) {
+                        importConfigViaSub()
+                    }
                 }
-                hideLoading()
             }
         }
         return true

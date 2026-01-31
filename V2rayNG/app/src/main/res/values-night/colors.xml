@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Ping/type colors tuned for dark background contrast -->
+    <color name="colorPing">#4DD4A8</color>
+    <color name="colorPingRed">#FF6B9D</color>
+    <color name="colorConfigType">#FFB687</color>
+    <color name="colorIndicator">@color/md_theme_primary</color>
+
     <color name="color_fab_active">#f97910</color>
     <color name="color_fab_inactive">#646464</color>
     <color name="divider_color_light">#424242</color>

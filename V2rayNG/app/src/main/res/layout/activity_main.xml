@@ -44,13 +44,38 @@
                         android:visibility="invisible"
                         app:indicatorColor="@color/color_fab_active" />
 
-                    <com.google.android.material.tabs.TabLayout
-                        android:id="@+id/tab_group"
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:tabIndicatorFullWidth="false"
-                        app:tabMode="scrollable"
-                        app:tabTextAppearance="@style/TabLayoutTextStyle" />
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.tabs.TabLayout
+                            android:id="@+id/tab_group"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:tabIndicatorFullWidth="false"
+                            app:tabMode="scrollable"
+                            app:tabTextAppearance="@style/TabLayoutTextStyle" />
+
+                        <View
+                            android:id="@+id/tab_fade_start"
+                            android:layout_width="@dimen/tab_fade_width"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="start|center_vertical"
+                            android:background="@drawable/fade_tab_start"
+                            android:visibility="gone"
+                            android:clickable="false"
+                            android:focusable="false" />
+
+                        <View
+                            android:id="@+id/tab_fade_end"
+                            android:layout_width="@dimen/tab_fade_width"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="end|center_vertical"
+                            android:background="@drawable/fade_tab_end"
+                            android:visibility="gone"
+                            android:clickable="false"
+                            android:focusable="false" />
+                    </FrameLayout>
 
                     <androidx.viewpager2.widget.ViewPager2
                         android:id="@+id/view_pager"

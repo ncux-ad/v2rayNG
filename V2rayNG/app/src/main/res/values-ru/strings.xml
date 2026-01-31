@@ -334,7 +334,17 @@
     <string name="connection_test_error_status_code">Код ошибки: #%d</string>
     <string name="connection_connected">Соединено, нажмите для проверки</string>
     <string name="connection_not_connected">Нет соединения</string>
+    <string name="connection_select_or_add_server">Выберите или добавьте сервер</string>
     <string name="connection_runing_task_left">Запущено проверок: %s</string>
+
+    <string name="empty_servers_title">Нет серверов</string>
+    <string name="empty_servers_hint">Добавьте конфиг через меню или нажмите ниже</string>
+    <string name="empty_servers_action">Импорт</string>
+    <string name="snackbar_retry">Повторить</string>
+
+    <string name="content_desc_server_row">Сервер %1$s, %2$s%3$s</string>
+    <string name="content_desc_delay_not_tested">не проверен</string>
+    <string name="content_desc_selected">, выбран</string>
 
     <string name="import_subscription_success">Подписка импортирована</string>
     <string name="import_subscription_failure">Невозможно импортировать подписку</string>

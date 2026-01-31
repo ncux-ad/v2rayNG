@@ -338,7 +338,17 @@
     <string name="connection_test_error_status_code">Error code: #%d</string>
     <string name="connection_connected">Connected, tap to check connection</string>
     <string name="connection_not_connected">Not connected</string>
+    <string name="connection_select_or_add_server">Select or add a server</string>
     <string name="connection_runing_task_left">Number of running test tasks: %s</string>
+
+    <string name="empty_servers_title">No servers</string>
+    <string name="empty_servers_hint">Add a config via menu or tap below</string>
+    <string name="empty_servers_action">Import</string>
+    <string name="snackbar_retry">Retry</string>
+
+    <string name="content_desc_server_row">Server %1$s, %2$s%3$s</string>
+    <string name="content_desc_delay_not_tested">not tested</string>
+    <string name="content_desc_selected">, selected</string>
 
     <string name="import_subscription_success">Subscription imported Successfully</string>
     <string name="import_subscription_failure">Import subscription failed</string>

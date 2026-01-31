@@ -6,6 +6,8 @@ import androidx.preference.CheckBoxPreference
 import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceGroupAdapter
+import androidx.recyclerview.widget.RecyclerView
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.multiprocess.RemoteWorkManager
@@ -61,7 +63,10 @@ class SettingsActivity : BaseActivity() {
             // This prevents inconsistencies between SharedPreferences and MMKV
             preferenceManager.preferenceDataStore = MmkvPreferenceDataStore()
 
-            addPreferencesFromResource(R.xml.pref_settings)
+            addPreferencesFromResource(
+                if (Utils.isTelevision(requireContext())) R.xml.pref_settings_tv
+                else R.xml.pref_settings
+            )
 
             initPreferenceSummaries()
 
@@ -95,6 +100,7 @@ class SettingsActivity : BaseActivity() {
                 autoUpdateInterval?.text?.toLongEx()?.let {
                     if (newValue) configureUpdateTask(it) else cancelUpdateTask()
                 }
+                refreshPreferenceFocusability()
                 true
             }
             mode?.setOnPreferenceChangeListener { pref, newValue ->
@@ -152,6 +158,47 @@ class SettingsActivity : BaseActivity() {
             preferenceScreen?.let { traverse(it) }
         }
 
+        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+            super.onViewCreated(view, savedInstanceState)
+            if (Utils.isTelevision(requireContext())) {
+                view.findViewById<RecyclerView>(android.R.id.list)?.let { list ->
+                    list.addOnChildAttachStateChangeListener(
+                        object : RecyclerView.OnChildAttachStateChangeListener {
+                            override fun onChildViewAttachedToWindow(child: View) {
+                                setFocusableFromPreference(child)
+                            }
+                            override fun onChildViewDetachedFromWindow(child: View) {}
+                        }
+                    )
+                    list.post { list.requestFocus() }
+                }
+            }
+        }
+
+        /** On TV: set view focusable from preference so D-pad skips disabled items. */
+        private fun setFocusableFromPreference(child: View) {
+            if (!Utils.isTelevision(requireContext())) return
+            val rv = child.parent as? RecyclerView ?: return
+            val adapter = rv.adapter as? PreferenceGroupAdapter ?: return
+            val pos = rv.getChildAdapterPosition(child)
+            if (pos in 0 until adapter.itemCount) {
+                val pref = adapter.getItem(pos)
+                if (pref != null) {
+                    child.isFocusable = pref.isEnabled
+                }
+            }
+        }
+
+        /** On TV: refresh focusable state for all visible preference rows (e.g. after mode change). */
+        private fun refreshPreferenceFocusability() {
+            if (!Utils.isTelevision(requireContext())) return
+            view?.findViewById<RecyclerView>(android.R.id.list)?.let { rv ->
+                for (i in 0 until rv.childCount) {
+                    setFocusableFromPreference(rv.getChildAt(i))
+                }
+            }
+        }
+
         override fun onStart() {
             super.onStart()
             updateHevTunSettings(MmkvManager.decodeSettingsBool(AppConfig.PREF_USE_HEV_TUNNEL, true))
@@ -167,6 +214,7 @@ class SettingsActivity : BaseActivity() {
 
             // Initialize auto-update interval state
             autoUpdateInterval?.isEnabled = MmkvManager.decodeSettingsBool(AppConfig.SUBSCRIPTION_AUTO_UPDATE, false)
+            refreshPreferenceFocusability()
         }
 
         private fun updateMode(value: String?) {
@@ -195,12 +243,14 @@ class SettingsActivity : BaseActivity() {
                     )
                 )
             }
+            refreshPreferenceFocusability()
         }
 
         private fun updateLocalDns(enabled: Boolean) {
             fakeDns?.isEnabled = enabled
 //            localDnsPort?.isEnabled = enabled
             vpnDns?.isEnabled = !enabled
+            refreshPreferenceFocusability()
         }
 
         private fun configureUpdateTask(interval: Long) {
@@ -234,6 +284,7 @@ class SettingsActivity : BaseActivity() {
                 updateMuxConcurrency(MmkvManager.decodeSettingsString(AppConfig.PREF_MUX_CONCURRENCY, "8"))
                 updateMuxXudpConcurrency(MmkvManager.decodeSettingsString(AppConfig.PREF_MUX_XUDP_CONCURRENCY, "8"))
             }
+            refreshPreferenceFocusability()
         }
 
         private fun updateMuxConcurrency(value: String?) {
@@ -256,11 +307,13 @@ class SettingsActivity : BaseActivity() {
             fragmentPackets?.isEnabled = enabled
             fragmentLength?.isEnabled = enabled
             fragmentInterval?.isEnabled = enabled
+            refreshPreferenceFocusability()
         }
 
         private fun updateHevTunSettings(enabled: Boolean) {
             hevTunLogLevel?.isEnabled = enabled
             hevTunRwTimeout?.isEnabled = enabled
+            refreshPreferenceFocusability()
         }
     }
 

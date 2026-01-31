@@ -18,8 +18,6 @@ import com.v2ray.ang.dto.GroupMapItem
 import com.v2ray.ang.dto.ServersCache
 import com.v2ray.ang.dto.SubscriptionCache
 import com.v2ray.ang.extension.serializable
-import com.v2ray.ang.extension.toastError
-import com.v2ray.ang.extension.toastSuccess
 import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsManager
@@ -42,6 +40,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var keywordFilter = ""
     val serversCache = mutableListOf<ServersCache>()
     val isRunning by lazy { MutableLiveData<Boolean>() }
+    val hasAnyServers by lazy { MutableLiveData<Boolean>(true) }
+    val snackbarMessageResId by lazy { MutableLiveData<Int?>(null) }
     val updateListAction by lazy { MutableLiveData<Int>() }
     val updateTestResultAction by lazy { MutableLiveData<String>() }
     private val tcpingTestScope by lazy { CoroutineScope(Dispatchers.IO) }
@@ -88,6 +88,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (index >= 0) {
             serversCache.removeAt(index)
         }
+        hasAnyServers.value = serversCache.isNotEmpty()
     }
 
 //    /**
@@ -168,6 +169,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 serversCache.add(ServersCache(guid, profile))
             }
         }
+        hasAnyServers.value = serversCache.isNotEmpty()
     }
 
     /**
@@ -437,12 +439,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 AppConfig.MSG_STATE_START_SUCCESS -> {
-                    getApplication<AngApplication>().toastSuccess(R.string.toast_services_success)
+                    snackbarMessageResId.value = R.string.toast_services_success
                     isRunning.value = true
                 }
 
                 AppConfig.MSG_STATE_START_FAILURE -> {
-                    getApplication<AngApplication>().toastError(R.string.toast_services_failure)
+                    snackbarMessageResId.value = R.string.toast_services_failure
                     isRunning.value = false
                 }
 

@@ -70,11 +70,19 @@ class MainRecyclerAdapter(
             }
 
             //layoutIndicator
-            if (guid == MmkvManager.getSelectServer()) {
+            val isSelected = guid == MmkvManager.getSelectServer()
+            if (isSelected) {
                 holder.itemMainBinding.layoutIndicator.setBackgroundResource(R.color.colorIndicator)
+                holder.itemMainBinding.layoutIndicator.contentDescription = context.getString(R.string.content_desc_selected).trimStart(' ', ',')
             } else {
                 holder.itemMainBinding.layoutIndicator.setBackgroundResource(0)
+                holder.itemMainBinding.layoutIndicator.contentDescription = null
             }
+
+            // Accessibility: describe row for TalkBack and D-pad
+            val delayStr = aff?.getTestDelayString()?.takeIf { it.isNotEmpty() } ?: context.getString(R.string.content_desc_delay_not_tested)
+            val selectedSuffix = if (isSelected) context.getString(R.string.content_desc_selected) else ""
+            holder.itemMainBinding.infoContainer.contentDescription = context.getString(R.string.content_desc_server_row, profile.remarks, delayStr, selectedSuffix)
 
             //subscription remarks
             val subRemarks = getSubscriptionRemarks(profile)

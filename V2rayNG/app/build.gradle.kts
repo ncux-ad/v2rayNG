@@ -45,6 +45,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Use debug signing so release APK installs on TV/device where debug was installed (same signature).
+            // For Play Store: configure a release keystore in signingConfigs and use it here instead.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
@@ -182,9 +185,6 @@ dependencies {
     // Background Task Libraries
     implementation(libs.work.runtime.ktx)
     implementation(libs.work.multiprocess)
-
-    // Multidex Support
-    implementation(libs.multidex)
 
     // Testing Libraries
     testImplementation(libs.junit)
